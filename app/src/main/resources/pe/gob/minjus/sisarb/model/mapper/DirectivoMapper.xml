@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="pe.gob.minjus.sisarb.model.mapper.DirectivoMapper">
+
+    <sql id="columnsSelect">
+        directivo_id,
+        nombre,
+        apellido_paterno,
+        apellido_materno,
+        telefono,
+        email,
+        direccion,
+        audit_usuario_creacion,
+        audit_fecha_creacion,
+        audit_usuario_modifica,
+        audit_fecha_modifica,
+
+        TO_CHAR(audit_fecha_creacion, 'yyyy-mm-dd')  audit_fecha_creacion_format,
+        TO_CHAR(audit_fecha_modifica, 'yyyy-mm-dd') audit_fecha_modifica_format
+    </sql>
+    <sql id="columnsInsert">directivo_id,nombre,apellido_paterno,apellido_materno,telefono,email,direccion,
+        audit_usuario_creacion,audit_fecha_creacion</sql>
+
+    <resultMap id="resultListBusqueda" type="pe.gob.minjus.sisarb.model.domain.Directivo">
+        <id  property="directivoId"   column="DIRECTIVO_ID"  />
+        <result property="nombre"            column="NOMBRE" />
+        <result property="apellidoPaterno"            column="APELLIDO_PATERNO" />
+        <result property="apellidoMaterno"            column="APELLIDO_MATERNO" />
+        <result property="telefono"            column="TELEFONO" />
+        <result property="email"            column="EMAIL" />
+        <result property="direccion"            column="DIRECCION" />
+        <result property="auditUsuarioCreacion"            column="AUDIT_USUARIO_CREACION" />
+        <result property="auditFechaCreacion"            column="AUDIT_FECHA_CREACION" />
+        <result property="auditUsuarioModifica"            column="AUDIT_USUARIO_MODIFICA" />
+        <result property="auditFechaModifica"            column="AUDIT_FECHA_MODIFICA" />
+
+        <result property="auditFechaCreacionFormat"            column="AUDIT_FECHA_CREACION_FORMAT" />
+        <result property="auditFechaModificaFormat"            column="AUDIT_FECHA_MODIFICA_FORMAT" />
+    </resultMap>
+
+    <select id="listBusqueda" resultMap="resultListBusqueda" parameterType="pe.gob.minjus.sisarb.model.request.DirectivoBusquedaRequest">
+        SELECT
+        <include refid="columnsSelect">
+        </include>
+        FROM MAE_DIRECTIVO
+        <include refid="listBusquedaWhere">
+            <property name="nombre" value="nombre"/>
+            <property name="apellidoPaterno" value="apellidoPaterno"/>
+            <property name="apellidoMaterno" value="apellidoMaterno"/>
+            <property name="auditUsuarioCreacion" value="auditUsuarioCreacion"/>
+            <property name="auditFechaCreacion" value="auditFechaCreacion"/>
+            <property name="auditUsuarioModifica" value="auditUsuarioModifica"/>
+            <property name="auditFechaModifica" value="auditFechaModifica"/>
+        </include>
+        OFFSET #{filaInicio,jdbcType=INTEGER} ROWS FETCH NEXT #{cantidadPorPagina,jdbcType=INTEGER} ROWS ONLY
+    </select>
+
+
+    <sql id="listBusquedaWhere">
+        WHERE estado='1'
+        <if test="nombreCompleto!=null and nombreCompleto!=''"> AND UPPER(nombre||' '||apellido_paterno||' '||apellido_materno) LIKE '%'||UPPER(#{nombreCompleto})||'%' </if>
+        <if test="nombre!=null and nombre!=''"> AND UPPER(nombre) LIKE '%'||UPPER(#{nombre})||'%' </if>
+        <if test="apellidoPaterno!=null and apellidoPaterno!=''"> AND UPPER(apellido_paterno) LIKE '%'||UPPER(#{apellidoPaterno})||'%' </if>
+        <if test="apellidoMaterno!=null and apellidoMaterno!=''"> AND UPPER(apellido_materno) LIKE '%'||UPPER(#{apellidoMaterno})||'%' </if>
+         <if test="auditUsuarioCreacion!=null and auditUsuarioCreacion!=''"> AND UPPER(audit_usuario_creacion) LIKE '%'||UPPER(#{auditUsuarioCreacion})||'%' </if>
+        <if test="auditFechaCreacion!=null and auditFechaCreacion!=''">
+            AND TO_CHAR(audit_fecha_creacion, 'yyyy-mm-dd hh24:mi:ss') LIKE '%'||UPPER(#{auditFechaCreacion})||'%'
+        </if>
+        <if test="auditUsuarioModifica!=null and auditUsuarioModifica!=''"> AND UPPER(audit_usuario_modifica) LIKE '%'||UPPER(#{auditUsuarioModifica})||'%' </if>
+        <if test="auditFechaModifica!=null and auditFechaModifica!=''">
+            AND TO_CHAR(audit_fecha_modifica, 'yyyy-mm-dd hh24:mi:ss') LIKE '%'||UPPER(#{auditFechaModifica})||'%'
+        </if>
+    </sql>
+
+    <!-- Query para calcular el total -->
+    <select id="listBusquedaTotal" resultType="java.lang.Integer" parameterType="pe.gob.minjus.sisarb.model.request.DirectivoBusquedaRequest">
+        select count(1) total FROM MAE_DIRECTIVO
+        <include refid="listBusquedaWhere">
+            <property name="nombre" value="nombre"/>
+            <property name="apellidoPaterno" value="apellidoPaterno"/>
+            <property name="apellidoMaterno" value="apellidoMaterno"/>
+            <property name="auditUsuarioCreacion" value="auditUsuarioCreacion"/>
+            <property name="auditFechaCreacion" value="auditFechaCreacion"/>
+            <property name="auditUsuarioModifica" value="auditUsuarioModifica"/>
+            <property name="auditFechaModifica" value="auditFechaModifica"/>
+        </include>
+    </select>
+
+
+    <insert id="insert"  parameterType="pe.gob.minjus.sisarb.model.domain.Directivo">
+        <selectKey keyProperty="directivoId" order="BEFORE" resultType="java.lang.Integer">
+            SELECT SEQ_MAE_DIRECTIVO.NEXTVAL FROM DUAL
+        </selectKey>
+
+        insert into MAE_DIRECTIVO (<include refid="columnsInsert" />) values
+        (
+        #{directivoId, jdbcType=NUMERIC},
+        UPPER(#{nombre, jdbcType=VARCHAR}),
+        UPPER(#{apellidoPaterno, jdbcType=VARCHAR}),
+        UPPER(#{apellidoMaterno, jdbcType=VARCHAR}),
+        #{telefono, jdbcType=VARCHAR},
+        UPPER(#{email, jdbcType=VARCHAR}),
+        UPPER(#{direccion, jdbcType=VARCHAR}),
+        UPPER(#{auditUsuarioCreacion,jdbcType=VARCHAR}),
+        sysdate)
+    </insert>
+
+    <update id="update" parameterType="pe.gob.minjus.sisarb.model.domain.Directivo">
+        update MAE_DIRECTIVO
+        set
+        audit_fecha_modifica=sysdate
+        <if test="nombre != null and nombre!=''">, nombre=UPPER(#{nombre, jdbcType=VARCHAR}) </if>
+        <if test="apellidoPaterno != null and apellidoPaterno!=''">, apellido_paterno=UPPER(#{apellidoPaterno, jdbcType=VARCHAR}) </if>
+        , apellido_materno=UPPER(#{apellidoMaterno, jdbcType=VARCHAR})
+        <if test="telefono != null and telefono!=''">, telefono=#{telefono, jdbcType=VARCHAR} </if>
+        <if test="email != null and email!=''">, email=UPPER(#{email, jdbcType=VARCHAR}) </if>
+        <if test="auditUsuarioModifica != null and auditUsuarioModifica!=''">, audit_usuario_modifica=UPPER(#{auditUsuarioModifica, jdbcType=VARCHAR}) </if>
+        where directivo_id=#{directivoId, jdbcType=NUMERIC}
+    </update>
+
+
+    <select id="findById" resultMap="resultListBusqueda" parameterType="java.lang.Integer">
+        SELECT
+        <include refid="columnsSelect">
+        </include>
+        FROM MAE_DIRECTIVO
+        WHERE directivo_id = #{id, jdbcType=NUMERIC}
+    </select>
+
+    <update id="deleteById" parameterType="java.lang.Integer">
+        update MAE_DIRECTIVO
+        set
+        estado='0'
+        where directivo_id=#{id, jdbcType=NUMERIC}
+    </update>
+</mapper>

@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="pe.gob.minjus.sisarb.model.mapper.ArbitroMapper">
+
+    <sql id="columnsSelect">
+        A.ARBITRO_ID,
+        A.ESPECIALIDAD_ID,
+        A.TIPO_DOCUMENTO_ID,
+        A.DECLARACION_INTERES_ID,
+        A.SANCION_ID,
+        A.UBIGEO_ID,
+        A.APELLIDO_PATERNO,
+        A.APELLIDO_MATERNO,
+        A.NOMBRE,
+        A.EXPERIENCIA_ARBITRAJE,
+        A.TIPO,
+        A.AUDIT_USUARIO_CREACION,
+        A.AUDIT_FECHA_CREACION,
+        A.AUDIT_USUARIO_MODIFICA,
+        A.AUDIT_FECHA_MODIFICA,
+
+        E.NOMBRE ESPECIALIDAD_NOMBRE,
+        TD.NOMBRE TIPO_DOCUMENTO_NOMBRE,
+        DI.NOMBRE DECLARACION_INTERES_NOMBRE,
+        S.NOMBRE SANCION_NOMBRE,
+
+
+        TO_CHAR(A.AUDIT_FECHA_CREACION, 'yyyy-mm-dd')  AUDIT_FECHA_CREACION_FORMAT,
+        TO_CHAR(A.AUDIT_FECHA_MODIFICA, 'yyyy-mm-dd') AUDIT_FECHA_MODIFICA_FORMAT
+    </sql>
+    <sql id="columnsInsert">ARBITRO_ID,ESPECIALIDAD_ID,TIPO_DOCUMENTO_ID,DECLARACION_INTERES_ID,SANCION_ID,UBIGEO_ID,
+        APELLIDO_PATERNO,APELLIDO_MATERNO,NOMBRE,EXPERIENCIA_ARBITRAJE,TIPO,
+        AUDIT_USUARIO_CREACION,AUDIT_FECHA_CREACION
+    </sql>
+
+    <resultMap id="resultListBusqueda" type="pe.gob.minjus.sisarb.model.domain.Arbitro">
+        <id property="arbitroId" column="ARBITRO_ID"/>
+        <result property="especialidadId" column="ESPECIALIDAD_ID"/>
+        <result property="tipoDocumentoId" column="TIPO_DOCUMENTO_ID"/>
+        <result property="declaracionInteresId" column="DECLARACION_INTERES_ID"/>
+        <result property="sancionId" column="SANCION_ID"/>
+        <result property="ubigeoId" column="UBIGEO_ID"/>
+
+        <result property="apellidoPaterno" column="APELLIDO_PATERNO"/>
+        <result property="apellidoMaterno" column="APELLIDO_MATERNO"/>
+        <result property="nombre" column="NOMBRE"/>
+        <result property="experienciaArbitraje" column="EXPERIENCIA_ARBITRAJE"/>
+        <result property="tipo" column="TIPO"/>
+
+        <result property="especialidadNombre" column="ESPECIALIDAD_NOMBRE"/>
+        <result property="tipoDocumentoNombre" column="TIPO_DOCUMENTO_NOMBRE"/>
+        <result property="declaracionInteresNombre" column="DECLARACION_INTERES_NOMBRE"/>
+        <result property="sancionNombre" column="SANCION_NOMBRE"/>
+
+        <result property="auditUsuarioCreacion" column="AUDIT_USUARIO_CREACION"/>
+        <result property="auditFechaCreacion" column="AUDIT_FECHA_CREACION"/>
+        <result property="auditUsuarioModifica" column="AUDIT_USUARIO_MODIFICA"/>
+        <result property="auditFechaModifica" column="AUDIT_FECHA_MODIFICA"/>
+
+        <result property="auditFechaCreacionFormat" column="AUDIT_FECHA_CREACION_FORMAT"/>
+        <result property="auditFechaModificaFormat" column="AUDIT_FECHA_MODIFICA_FORMAT"/>
+    </resultMap>
+
+    <select id="listBusqueda" resultMap="resultListBusqueda"
+            parameterType="pe.gob.minjus.sisarb.model.request.ArbitroBusquedaRequest">
+        SELECT
+        <include refid="columnsSelect">
+        </include>
+        FROM TRS_ARBITRO A
+        LEFT JOIN TRS_DECLARACION_INTERES DI  ON A.DECLARACION_INTERES_ID = DI.DECLARACION_INTERES_ID
+        LEFT JOIN MAE_ESPECIALIDAD E  ON A.ESPECIALIDAD_ID = E.ESPECIALIDAD_ID
+        LEFT JOIN MAE_TIPO_DOCUMENTO TD ON A.TIPO_DOCUMENTO_ID = TD.TIPO_DOCUMENTO_ID
+        LEFT JOIN TRS_SANCION S  ON A.SANCION_ID = S.SANCION_ID
+        <include refid="listBusquedaWhere">
+            <property name="nombre" value="nombre"/>
+            <property name="apellidoPaterno" value="apellidoPaterno"/>
+            <property name="apellidoMaterno" value="apellidoMaterno"/>
+            <property name="auditUsuarioCreacion" value="auditUsuarioCreacion"/>
+            <property name="auditFechaCreacion" value="auditFechaCreacion"/>
+            <property name="auditUsuarioModifica" value="auditUsuarioModifica"/>
+            <property name="auditFechaModifica" value="auditFechaModifica"/>
+        </include>
+        OFFSET #{filaInicio,jdbcType=INTEGER} ROWS FETCH NEXT #{cantidadPorPagina,jdbcType=INTEGER} ROWS ONLY
+    </select>
+
+
+    <sql id="listBusquedaWhere">
+        WHERE A.estado='1'
+
+        <if test="nombreCompleto!=null and nombreCompleto!=''">AND UPPER(A.NOMBRE ||' '||A.APELLIDO_PATERNO||' '||A.APELLIDO_MATERNO) LIKE
+            '%'||UPPER(#{nombreCompleto})||'%'
+        </if>
+
+        <if test="especialidadId!=null">AND A.ESPECIALIDAD_ID=#{especialidadId}</if>
+        <if test="tipoDocumentoId!=null">AND A.TIPO_DOCUMENTO_ID=#{tipoDocumentoId}</if>
+        <if test="declaracionInteresId!=null">AND A.DECLARACION_INTERES_ID=#{declaracionInteresId}</if>
+        <if test="sancionId!=null">AND A.SANCION_ID=#{sancionId}</if>
+
+        <if test="auditUsuarioCreacion!=null and auditUsuarioCreacion!=''">
+            AND UPPER( A.AUDIT_USUARIO_CREACION) LIKE '%'||UPPER(#{auditUsuarioCreacion})||'%'
+        </if>
+        <if test="auditFechaCreacion!=null and auditFechaCreacion!=''">
+            AND TO_CHAR(A.AUDIT_FECHA_CREACION, 'yyyy-mm-dd hh24:mi:ss') LIKE '%'||UPPER(#{auditFechaCreacion})||'%'
+        </if>
+        <if test="auditUsuarioModifica!=null and auditUsuarioModifica!=''">
+            AND UPPER(A.AUDIT_USUARIO_MODIFICA) LIKE '%'||UPPER(#{auditUsuarioModifica})||'%'
+        </if>
+        <if test="auditFechaModifica!=null and auditFechaModifica!=''">
+            AND TO_CHAR(A.AUDIT_FECHA_MODIFICA, 'yyyy-mm-dd hh24:mi:ss') LIKE '%'||UPPER(#{auditFechaModifica})||'%'
+        </if>
+    </sql>
+
+    <!-- Query para calcular el total -->
+    <select id="listBusquedaTotal" resultType="java.lang.Integer"
+            parameterType="pe.gob.minjus.sisarb.model.request.ArbitroBusquedaRequest">
+        select count(1) total
+        FROM TRS_ARBITRO A
+        LEFT JOIN TRS_DECLARACION_INTERES DI  ON A.DECLARACION_INTERES_ID = DI.DECLARACION_INTERES_ID
+        LEFT JOIN MAE_ESPECIALIDAD E  ON A.ESPECIALIDAD_ID = E.ESPECIALIDAD_ID
+        LEFT JOIN MAE_TIPO_DOCUMENTO TD ON A.TIPO_DOCUMENTO_ID = TD.TIPO_DOCUMENTO_ID
+        LEFT JOIN TRS_SANCION S  ON A.SANCION_ID = S.SANCION_ID
+        <include refid="listBusquedaWhere">
+            <property name="nombre" value="nombre"/>
+            <property name="apellidoPaterno" value="apellidoPaterno"/>
+            <property name="apellidoMaterno" value="apellidoMaterno"/>
+            <property name="auditUsuarioCreacion" value="auditUsuarioCreacion"/>
+            <property name="auditFechaCreacion" value="auditFechaCreacion"/>
+            <property name="auditUsuarioModifica" value="auditUsuarioModifica"/>
+            <property name="auditFechaModifica" value="auditFechaModifica"/>
+        </include>
+    </select>
+
+
+    <insert id="insert" parameterType="pe.gob.minjus.sisarb.model.domain.Arbitro">
+        <selectKey keyProperty="arbitroId" order="BEFORE" resultType="java.lang.Integer">
+            SELECT SEQ_TRS_ARBITRO.NEXTVAL FROM DUAL
+        </selectKey> 
+        INSERT INTO TRS_ARBITRO (<include refid="columnsInsert"/>) VALUES
+        (
+        #{arbitroId, jdbcType=NUMERIC},
+        #{especialidadId, jdbcType=NUMERIC},
+        #{tipoDocumentoId, jdbcType=NUMERIC},
+        #{declaracionInteresId, jdbcType=NUMERIC},
+        #{sancionId, jdbcType=NUMERIC},
+        #{ubigeoId, jdbcType=NUMERIC},
+        UPPER(#{apellidoPaterno, jdbcType=VARCHAR}),
+        UPPER(#{apellidoMaterno, jdbcType=VARCHAR}),
+        UPPER(#{nombre, jdbcType=VARCHAR}),
+        UPPER(#{experienciaArbitraje, jdbcType=VARCHAR}),
+        UPPER(#{tipo, jdbcType=VARCHAR}), 
+        UPPER(#{auditUsuarioCreacion,jdbcType=VARCHAR}),
+        sysdate)
+    </insert>
+
+    <update id="update" parameterType="pe.gob.minjus.sisarb.model.domain.Arbitro">
+        update TRS_ARBITRO
+        set
+        AUDIT_FECHA_MODIFICA=sysdate
+        <if test="especialidadId != null">, ESPECIALIDAD_ID=#{especialidadId, jdbcType=NUMERIC}</if>
+        <if test="tipoDocumentoId != null">, TIPO_DOCUMENTO_ID=#{tipoDocumentoId, jdbcType=NUMERIC}</if>
+        <if test="declaracionInteresId != null">, DECLARACION_INTERES_ID=#{declaracionInteresId, jdbcType=NUMERIC}</if>
+        <if test="sancionId != null">, SANCION_ID=#{sancionId, jdbcType=NUMERIC}</if>
+        , UBIGEO_ID=#{ubigeoId, jdbcType=NUMERIC}
+        <if test="apellidoPaterno != null and apellidoPaterno!=''">,APELLIDO_PATERNO=#{apellidoPaterno, jdbcType=VARCHAR}</if>
+        , UPPER(APELLIDO_MATERNO=#{apellidoMaterno, jdbcType=VARCHAR})
+        <if test="nombre != null and nombre!=''">,UPPER(NOMBRE=#{nombre, jdbcType=VARCHAR})</if>
+        <if test="experienciaArbitraje != null and experienciaArbitraje!=''">, UPPER(EXPERIENCIA_ARBITRAJE=#{experienciaArbitraje, jdbcType=VARCHAR})</if>
+        <if test="tipo != null and tipo!=''">, UPPER(TIPO=#{tipo, jdbcType=VARCHAR})</if>
+        <if test="auditUsuarioModifica != null and auditUsuarioModifica!=''">,
+            UPPER(AUDIT_USUARIO_MODIFICA=#{auditUsuarioModifica, jdbcType=VARCHAR})
+        </if>
+        where ARBITRO_ID=#{arbitroId, jdbcType=NUMERIC}
+    </update>
+
+
+    <select id="findById" resultMap="resultListBusqueda" parameterType="java.lang.Integer">
+        SELECT
+        <include refid="columnsSelect">
+        </include>
+        FROM TRS_ARBITRO A
+        LEFT JOIN TRS_DECLARACION_INTERES DI  ON A.DECLARACION_INTERES_ID = DI.DECLARACION_INTERES_ID
+        LEFT JOIN MAE_ESPECIALIDAD E  ON A.ESPECIALIDAD_ID = E.ESPECIALIDAD_ID
+        LEFT JOIN MAE_TIPO_DOCUMENTO TD ON A.TIPO_DOCUMENTO_ID = TD.TIPO_DOCUMENTO_ID
+        LEFT JOIN TRS_SANCION S  ON A.SANCION_ID = S.SANCION_ID
+        WHERE
+        A.estado='1'
+        AND A.ARBITRO_ID = #{id, jdbcType=NUMERIC}
+    </select>
+
+    <update id="deleteById" parameterType="java.lang.Integer">
+        update TRS_ARBITRO
+        set
+        estado='0'
+        where ARBITRO_ID=#{id, jdbcType=NUMERIC}
+    </update>
+</mapper>
